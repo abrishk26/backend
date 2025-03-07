@@ -14,8 +14,7 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()')); // UUID primary key
-            $table->text('first_name'); 
-            $table->text('last_name');
+            $table->text('name');
             $table->text('email')->unique();
             $table->text('password');
             $table->enum('role', ['admin', 'customer'])->default('customer'); // Role column
