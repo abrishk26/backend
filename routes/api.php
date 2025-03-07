@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Middleware\EnsureJsonRequest as JsonMiddleware;
+use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\OrderController;
 
 Route::get('/health-check', function () {
     return response()->json([
@@ -12,15 +14,33 @@ Route::get('/health-check', function () {
     ]);
 });
 
+// Book management
 Route::get('/books', [BookController::class, 'index']);
 Route::get('/books/{id}', [BookController::class, 'show']);
-Route::post('/books', [BookController::class, 'store']);
-Route::put('/books/{id}', [BookController::class, 'update']);
-Route::delete('/books/{id}', [BookController::class, 'destroy']);
 
-Route::get('/users', [UserController::class, 'index']); // GET all users
-Route::get('/users/{id}', [UserController::class, 'show']); // GET a single user
+// User management
 Route::post('/users/register', [UserController::class, 'store'])->middleware(JsonMiddleware::class); // POST create a new user
 Route::post('/users/login', [UserController::class, 'login'])->middleware(JsonMiddleware::class); // POST login a user
-Route::put('/users/{id}', [UserController::class, 'update'])->middleware(JsonMiddleware::class); // PUT update a user
-Route::delete('/users/{id}', [UserController::class, 'destroy']); // DELETE a user
+
+
+// Apply 'auth:sanctum' middleware to a group of routes
+Route::middleware(['auth:sanctum'])->group(function () {
+    // Protected routes that require authentication via Sanctum
+
+    // user management
+    Route::get('/admin/users', [UserController::class, 'index'])->middleware(AdminMiddleware::class); // GET all users
+    Route::get('/admin/users/{id}', [UserController::class, 'show'])->middleware(AdminMiddleware::class); // GET a single user
+    Route::put('/admin/users/{id}', [UserController::class, 'update'])->middleware(JsonMiddleware::class)->middleware(AdminMiddleware::class); // PUT update a user
+    Route::delete('/admin/users/{id}', [UserController::class, 'destroy'])->middleware(AdminMiddleware::class); // DELETE a user
+
+    // Book management
+    Route::post('/admin/books', [BookController::class, 'store'])->middleware(JsonMiddleware::class)->middleware(AdminMiddleware::class);
+    Route::put('/admin/books/{id}', [BookController::class, 'update'])->middleware(JsonMiddleware::class)->middleware(AdminMiddleware::class);
+    Route::delete('/admin/books/{id}', [BookController::class, 'destroy'])->middleware(AdminMiddleware::class);
+
+    // Order management
+    Route::get('/admin/orders', [OrderController::class, 'index'])->middleware(AdminMiddleware::class); // View all orders
+
+});    
+
+
