@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class Book extends Model
+class OrderItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title', 'author', 'published_year', 'genre', 'description', 'image_data', 'price', 'stock'];
+    protected $fillable = ['order_id', 'book_id', 'quantity', 'price'];
 
     public $incrementing = false;
     protected $keyType = 'string';
@@ -21,5 +21,15 @@ class Book extends Model
         static::creating(function ($model) {
             $model->id = Str::uuid();
         });
+    }
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    public function book()
+    {
+        return $this->belongsTo(Book::class);
     }
 }

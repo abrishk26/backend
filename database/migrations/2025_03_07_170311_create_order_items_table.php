@@ -12,17 +12,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('books', function (Blueprint $table) {
+        Schema::create('order_items', function (Blueprint $table) {
             $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
-            $table->text('title');
-            $table->text('author');
-            $table->integer('published_year');
-            $table->text('genre');
-            $table->text('description');
-            $table->binary('image_data'); // Store image as binary
+            $table->uuid('order_id');
+            $table->uuid('book_id');
+            $table->integer('quantity')->unsigned();
             $table->decimal('price', 10, 2);
-            $table->integer('stock')->unsigned()->default(0);
             $table->timestamps();
+
+            // Foreign keys
+            $table->foreign('order_id')->references('id')->on('orders')->onDelete('cascade');
+            $table->foreign('book_id')->references('id')->on('books')->onDelete('cascade');
         });
     }
 
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('books');
+        Schema::dropIfExists('order_items');
     }
 };

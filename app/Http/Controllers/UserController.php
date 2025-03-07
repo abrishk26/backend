@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -25,14 +26,16 @@ class UserController extends Controller
 		return response()->json(['message' => 'User not found'], 404);
 	}
 
+	// POST create a new user
 	public function store(Request $request)
 	{
 		$request->validate([
 			'name' => 'required|string|max:255',
-			'email' => 'required|string|email|max:255|unique:users,email',
-			'password' => 'required|string|min:8|confirmed',
+			'email' => 'required|string|email|unique:users',
+			'password' => 'required|string',
 		]);
 
+		Log::info('Creating a new user', ['email' => $request->json('email')]);
 		$user = User::create([
 			'name' => $request->json('name'),
 			'email' => $request->json('email'),
@@ -41,6 +44,25 @@ class UserController extends Controller
 
 		return response()->json($user, 201);
 	}
+
+	public function login(Request $request)
+	{
+		$request->validate([
+			'email' => 'required|string|email',
+			'password' => 'required|string',
+		]);
+
+		$user = User::where('email', $request->json('email'))->first();
+
+		if (!$user || !Hash::check($request->json('password'), $user->password)) {
+			return response()->json(['message' => 'Invalid credentials'], 401);
+		}
+
+		$token = $user->createToken('auth_token')->plainTextToken;
+
+		return response()->json(['message' => 'Login successful'], 200)->header('Authorization', 'Bearer ' . $token);
+	}
+
 	public function update(Request $request, $id)
 	{
 		$user = User::find($id);
