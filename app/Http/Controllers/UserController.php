@@ -46,22 +46,45 @@ class UserController extends Controller
 	}
 
 	public function login(Request $request)
-	{
-		$request->validate([
-			'email' => 'required|string|email',
-			'password' => 'required|string',
-		]);
+{
+    // Validate the request
+    $request->validate([
+        'email' => 'required|string|email',
+        'password' => 'required|string',
+    ]);
 
-		$user = User::where('email', $request->json('email'))->first();
+    // Find the user by email
+    $user = User::where('email', $request->input('email'))->first();
 
-		if (!$user || !Hash::check($request->json('password'), $user->password)) {
-			return response()->json(['message' => 'Invalid credentials'], 401);
-		}
+    // Check if the user exists and the password is correct
+    if (!$user || !Hash::check($request->input('password'), $user->password)) {
+        return response()->json(['message' => 'Invalid credentials'], 401);
+    }
 
-		$token = $user->createToken('auth_token')->plainTextToken;
+    // Create a new token for the user
+    $tokenResult = $user->createToken('auth_token');
+    $plainTextToken = $tokenResult->plainTextToken;
 
-		return response()->json(['message' => 'Login successful'], 200)->header('Authorization', 'Bearer ' . $token);
-	}
+    // Extract the token ID from the plain text token
+    $tokenId = explode('|', $plainTextToken)[0];
+
+    // Include user information in the response (excluding sensitive data)
+    $userInfo = [
+        'id' => $user->id,
+        'name' => $user->name,
+        'email' => $user->email,
+        'role' => $user->role, // Assuming 'role' is a field in your User model
+    ];
+
+    // Return the response with the token and user information
+    return response()->json([
+        'message' => 'Login successful',
+        'user' => $userInfo,
+        'token' => $plainTextToken, // Include the full token in the response body
+        'token_id' => $tokenId, // Include the token ID as a UUID
+        'token_type' => 'Bearer', // Specify the token type
+    ], 200)->header('Authorization', 'Bearer ' . $plainTextToken); // Also set the token in the header
+}
 
 	public function update(Request $request, $id)
 	{
@@ -89,5 +112,4 @@ class UserController extends Controller
 
 		return response()->json(['message' => 'User deleted successfully']);
 	}
-
 }

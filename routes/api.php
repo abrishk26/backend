@@ -2,10 +2,14 @@
 
 use App\Http\Middleware\EnsureJsonRequest as JsonMiddleware;
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\CheckAuthorizationHeader;
+use App\Http\Middleware\CheckUserRole;
+use App\Http\Middleware\ValidateToken;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\AdminController;
 
 Route::get('/health-check', function () {
     return response()->json([
@@ -21,7 +25,6 @@ Route::get('/books/{id}', [BookController::class, 'show']);
 // User management
 Route::post('/users/register', [UserController::class, 'store'])->middleware(JsonMiddleware::class); // POST create a new user
 Route::post('/users/login', [UserController::class, 'login'])->middleware(JsonMiddleware::class); // POST login a user
-
 
 // Apply 'auth:sanctum' middleware to a group of routes
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -41,6 +44,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Order management
     Route::get('/admin/orders', [OrderController::class, 'index'])->middleware(AdminMiddleware::class); // View all orders
 
-});    
+    // Admin check
+});
 
+Route::get('/admin', [AdminController::class, 'check'])->middleware(CheckAuthorizationHeader::class)->middleware(ValidateToken::class)->middleware(CheckUserRole::class); // Check if user is authorized
 

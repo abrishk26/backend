@@ -10,20 +10,29 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
+    // Migration file
     public function up(): void
     {
         Schema::create('personal_access_tokens', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()')); // UUID primary key
-            $table->uuid('tokenable_id'); // Explicitly set tokenable_id as UUID
-            $table->string('tokenable_type'); // polymorphic type column
+            $table->id(); // Auto-incrementing integer primary key
+            $table->uuid('tokenable_id'); // UUID for tokenable_id
+            $table->string('tokenable_type'); // Polymorphic type column
             $table->string('name');
             $table->string('token', 64)->unique();
             $table->text('abilities')->nullable();
             $table->timestamp('last_used_at')->nullable();
             $table->timestamp('expires_at')->nullable();
             $table->timestamps();
+
+            // Define foreign key constraint
+            $table->foreign('tokenable_id')
+                ->references('id')
+                ->on('users') // Reference the 'users' table
+                ->onDelete('cascade');
         });
     }
+
+
 
     /**
      * Reverse the migrations.
