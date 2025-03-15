@@ -17,19 +17,25 @@ class ValidateToken
      */
     public function handle(Request $request, Closure $next)
     {
-       
-            $token = $request->bearerToken(); // Extract the token from the Authorization header
-            Log::info('Token being validated:', ['token' => $token]);
-        
-            if (!$token) {
-                return response()->json(['error' => 'Unauthorized'], 401);
-            }
-        
-            $personalAccessToken = PersonalAccessToken::findToken($token);
-            if (!$personalAccessToken) {
-                return response()->json(['error' => 'Unauthorized'], 401);
-            }
-        
-            return $next($request);
+        $token = $request->bearerToken(); // Extract the token from the Authorization header
+
+        // Consider restricting logging in production environments.
+        Log::info('Token being validated:', ['token' => $token]);
+
+        if (!$token) {
+            return response()->json(['error' => 'Unauthorized'], 401);
         }
+
+        $personalAccessToken = PersonalAccessToken::findToken($token);
+        if (!$personalAccessToken) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+        
+        // Optionally attach the user to the request
+        $request->setUserResolver(function () use ($personalAccessToken) {
+            return $personalAccessToken->tokenable;
+        });
+
+        return $next($request);
+    }
 }

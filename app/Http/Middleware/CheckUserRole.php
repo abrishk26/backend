@@ -15,15 +15,12 @@ class CheckUserRole
      */
     public function handle(Request $request, Closure $next)
     {
-        $user = $request->auth_user; // Retrieved from the previous middleware
+        $user = $request->user(); // Get user from the previous middleware
 
-        if (!$user || $user->role !== 'admin') {
+        if (!$user || trim($user->role) !== 'admin') {
             return response()->json(['message' => 'Unauthorized'], Response::HTTP_FORBIDDEN);
         }
 
         return $next($request);
     }
 }
-
-
-
