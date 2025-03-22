@@ -33,15 +33,17 @@ class BookController extends Controller
 			'published_year' => 'required|integer',
 			'description' => 'required|string',
 			'genre' => 'required|string',
-			'image' => 'required|string', // Image is expected to be a Base64 string
+			'image_data' => 'required|string', // Image is expected to be a Base64 string
+			'stock' => 'required|integer',
+			'price' => 'required|decimal:0,6',
 		]);
 
-		// Decode the Base64 image string to binary data
-		$imageData = base64_decode($validated['image']);
+		// // Decode the Base64 image string to binary data
+		// $imageData = $validated['image_data']);
 
 
-		// You can store the path to the image in the database
-		$validated['image'] = $imageData;  // Save the file path in the database
+		// // You can store the path to the image in the database
+		// $validated['image_data'] = $imageData;  // Save the file path in the database
 
 		// Create the book with the Base64 image data stored as binary
 		$book = Book::create($validated);
@@ -61,16 +63,18 @@ class BookController extends Controller
 			'published_year' => 'nullable|integer',
 			'description' => 'nullable|string',
 			'genre' => 'nullable|string',
-			'image' => 'nullable|string', // Image is expected to be a Base64 string
+			'image_data' => 'nullable|string', // Image is expected to be a Base64 string
+			'stock' => 'nullable|integer',
+			'price' => 'nullable|decimal:0,6',
 		]);
 
-		// If an image is provided, decode the Base64 string to binary
-		if (isset($validated['image'])) {
-			// Decode the Base64 string to binary data
-			$imageData = base64_decode($validated['image']);
+		// // If an image is provided, decode the Base64 string to binary
+		// if (isset($validated['image_data'])) {
+		// 	// Decode the Base64 string to binary data
+		// 	$imageData = base64_decode($validated['image_data']);
 
-			$validated['image'] = $imageData;
-		}
+		// 	$validated['image_data'] = $imageData;
+		// }
 
 		// Update the book with the new data
 		$book->update($validated);

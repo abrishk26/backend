@@ -19,8 +19,8 @@ return new class extends Migration
             $table->integer('published_year');
             $table->text('genre');
             $table->text('description');
-            $table->binary('image_data'); // Store image as binary
-            $table->decimal('price', 10, 2);
+            $table->text('image_data'); // Store image as binary
+            $table->decimal('price', 10);
             $table->integer('stock')->unsigned()->default(0);
             $table->timestamps();
         });
