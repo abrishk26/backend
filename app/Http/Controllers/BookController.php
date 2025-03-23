@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class BookController extends Controller
 {
@@ -26,55 +28,64 @@ class BookController extends Controller
 
 	public function store(Request $request)
 	{
-		// Validate the incoming data (including the Base64 image)
+		// Validate the incoming data
 		$validated = $request->validate([
 			'title' => 'required|string',
 			'author' => 'required|string',
 			'published_year' => 'required|integer',
 			'description' => 'required|string',
 			'genre' => 'required|string',
-			'image_data' => 'required|string', // Image is expected to be a Base64 string
+			'image_data' => 'required|string', // Base64-encoded image string
 			'stock' => 'required|integer',
-			'price' => 'required|decimal:0,6',
+			'price' => 'required|numeric',
 		]);
 
-		// // Decode the Base64 image string to binary data
-		// $imageData = $validated['image_data']);
+		// Decode the Base64 image and store it
+		$imageData = $validated['image_data'];
+		$imagePath = $this->storeBase64Image($imageData);
 
+		// Save the image path in the database
+		$validated['image_data'] = $imagePath;
 
-		// // You can store the path to the image in the database
-		// $validated['image_data'] = $imageData;  // Save the file path in the database
-
-		// Create the book with the Base64 image data stored as binary
+		// Create the book
 		$book = Book::create($validated);
 
 		return response()->json($book, 201);
 	}
 
-	public function update(Request $request,  $id)
+	public function update(Request $request, $id)
 	{
 		// Find the book by ID
 		$book = Book::find($id);
-		
-		// Validate the incoming data (including the Base64 image)
+
+		if (!$book) {
+			return response()->json(['message' => 'Book not found'], 404);
+		}
+
+		// Validate the incoming data
 		$validated = $request->validate([
 			'title' => 'nullable|string',
 			'author' => 'nullable|string',
 			'published_year' => 'nullable|integer',
 			'description' => 'nullable|string',
 			'genre' => 'nullable|string',
-			'image_data' => 'nullable|string', // Image is expected to be a Base64 string
+			'image_data' => 'nullable|string', // Base64-encoded image string
 			'stock' => 'nullable|integer',
-			'price' => 'nullable|decimal:0,6',
+			'price' => 'nullable|numeric',
 		]);
 
-		// // If an image is provided, decode the Base64 string to binary
-		// if (isset($validated['image_data'])) {
-		// 	// Decode the Base64 string to binary data
-		// 	$imageData = base64_decode($validated['image_data']);
+		// If a new Base64 image is provided, decode and store it
+		if (isset($validated['image_data'])) {
+			// Delete the old image file if it exists
+			if ($book->image_data) {
+				Storage::disk('public')->delete($book->image_data);
+			}
 
-		// 	$validated['image_data'] = $imageData;
-		// }
+			// Decode the Base64 image and store it
+			$imageData = $validated['image_data'];
+			$imagePath = $this->storeBase64Image($imageData);
+			$validated['image_data'] = $imagePath;
+		}
 
 		// Update the book with the new data
 		$book->update($validated);
@@ -90,8 +101,71 @@ class BookController extends Controller
 			return response()->json(['message' => 'Book not found'], 404);
 		}
 
+		// Delete the image file if it exists
+		if ($book->image_data) {
+			Storage::disk('public')->delete($book->image_data);
+		}
+
 		$book->delete();
 
 		return response()->json(['message' => 'Book deleted successfully']);
+	}
+
+	/**
+	 * Helper function to store a Base64-encoded image and return the file path.
+	 *
+	 * @param string $base64Image
+	 * @return string
+	 * @throws \InvalidArgumentException
+	 */
+	private function storeBase64Image(string $base64Image): string
+	{
+		// Check if the Base64 string includes the prefix
+		if (strpos($base64Image, 'data:image/') === 0) {
+			// Extract the image type and data from the Base64 string
+			if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $matches)) {
+				$imageType = $matches[1]; // e.g., jpeg, png, etc.
+				$imageData = base64_decode(substr($base64Image, strpos($base64Image, ',') + 1));
+			} else {
+				throw new \InvalidArgumentException('Invalid Base64 image format');
+			}
+		} else {
+			// Assume the Base64 string is raw data (without prefix)
+			$imageData = base64_decode($base64Image);
+			$imageType = $this->detectImageType($imageData); // Detect the image type
+		}
+
+		// Generate a unique file name
+		$fileName = Str::uuid() . '.' . $imageType;
+
+		// Store the image in the public disk
+		Storage::disk('public')->put("images/{$fileName}", $imageData);
+
+		// Return the file path
+		return "images/{$fileName}";
+	}
+
+	/**
+	 * Detect the image type from raw image data.
+	 *
+	 * @param string $imageData
+	 * @return string
+	 * @throws \InvalidArgumentException
+	 */
+	private function detectImageType(string $imageData): string
+	{
+		$finfo = new \finfo(FILEINFO_MIME_TYPE);
+		$mimeType = $finfo->buffer($imageData);
+
+		switch ($mimeType) {
+			case 'image/jpeg':
+				return 'jpg';
+			case 'image/png':
+				return 'png';
+			case 'image/gif':
+				return 'gif';
+			default:
+				throw new \InvalidArgumentException('Unsupported image type');
+		}
 	}
 }
