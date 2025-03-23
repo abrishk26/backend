@@ -10,9 +10,15 @@ use Illuminate\Support\Str;
 class BookController extends Controller
 {
 	// Get all books
-	public function index()
+	public function index(Request $request)
 	{
-		return response()->json(Book::all());
+		// Get the 'limit' query parameter (default to null if not provided)
+		$limit = $request->query('limit');
+
+		// Fetch books with optional limit
+		$books = $limit ? Book::take($limit)->get() : Book::all();
+
+		return response()->json($books);
 	}
 
 	public function show($id)
