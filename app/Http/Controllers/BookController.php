@@ -12,11 +12,25 @@ class BookController extends Controller
 	// Get all books
 	public function index(Request $request)
 	{
-		// Get the 'limit' query parameter (default to null if not provided)
+		// Get query parameters
 		$limit = $request->query('limit');
+		$genre = $request->query('genre');
 
-		// Fetch books with optional limit
-		$books = $limit ? Book::take($limit)->get() : Book::all();
+		// Start building the query
+		$query = Book::query();
+
+		// Apply genre filter if provided
+		if ($genre) {
+			$query->where('genre', $genre);
+		}
+
+		// Apply limit if provided
+		if ($limit) {
+			$query->take($limit);
+		}
+
+		// Execute the query and get results
+		$books = $query->get();
 
 		return response()->json($books);
 	}
