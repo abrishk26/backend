@@ -153,8 +153,7 @@ This document outlines the API endpoints, their purposes, required headers, and 
 ### PUT /admin/orders/{id} - `Admin Only`
 * **Purpose**: Updates an existing order.
 * **Method**: `PUT`
-* **Required Headers**:
-    * `Content-Type`: `application/json`
+* **Required Headers**:`Content-Type: application-json, Authorization: Bearer {token}`
 * **Body Data**:
    ` {  
   "total_price": "numeric (optional)",  
@@ -165,5 +164,5 @@ This document outlines the API endpoints, their purposes, required headers, and 
 * **Purpose**: Deletes a specific order by its ID.
 * **Method**: `DELETE`
 * **Required Headers**:
-   * `Content-Type`: `application/json`
+   * `Authorization: Bearer {token}`
 * **Body Data**: None. The order ID is passed as a path parameter.
