@@ -30,6 +30,14 @@ Route::post('/users/login', [UserController::class, 'login'])->middleware(JsonMi
 Route::middleware(['auth:sanctum'])->group(function () {
     // Protected routes that require authentication via Sanctum
 
+    // Admin-protected order endpoints
+    Route::middleware(AdminMiddleware::class)->group(function () {
+        Route::get('/admin/orders', [OrderController::class, 'index']);
+        Route::get('/admin/orders/{id}', [OrderController::class, 'show']);
+        Route::put('/admin/orders/{id}', [OrderController::class, 'update'])->middleware(JsonMiddleware::class);
+        Route::delete('/admin/orders/{id}', [OrderController::class, 'destroy']);
+    });
+
     // user management
     Route::get('/admin/users', [UserController::class, 'index'])->middleware(AdminMiddleware::class); // GET all users
     Route::get('/admin/users/{id}', [UserController::class, 'show'])->middleware(AdminMiddleware::class); // GET a single user
@@ -44,7 +52,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Order management
     Route::get('/admin/orders', [OrderController::class, 'index'])->middleware(AdminMiddleware::class); // View all orders
 
-    // Admin check
+    // Authenticated user creates an order
+    Route::post('/orders', [OrderController::class, 'store'])->middleware(JsonMiddleware::class);
 });
 
 Route::get('/admin', [AdminController::class, 'check'])->middleware(CheckAuthorizationHeader::class)->middleware(ValidateToken::class)->middleware(CheckUserRole::class); // Check if user is authorized
